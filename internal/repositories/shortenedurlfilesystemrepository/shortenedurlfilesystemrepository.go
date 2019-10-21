@@ -1,9 +1,11 @@
 package shortenedurlfilesystemrepository
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"http-url-shortener/internal/entities/shortenedurl"
-	"os"
+	"io/ioutil"
 )
 
 // FileSystem represents a file system to perform operations on
@@ -18,23 +20,50 @@ func New(p string) FileSystem {
 	}
 }
 
-// Create a new URL on file system
+// Create a new Shortened URL on file system
 func (f FileSystem) Create(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedURL, error) {
-	fullPath := getPathToURLFile(f, u)
-	_, err := os.OpenFile(fullPath, os.O_RDONLY, 0644)
+	if u.GetLong() == "" || u.GetShort() == "" {
+		// nothing to save
+		return shortenedurl.ShortenedURL{}, errors.New("Shortened URL is empty")
+	}
 
-	if err == nil {
-		// file already exists...
+	path := getPathToDbFile(f)
+	m := loadManifest(path)
+
+	if m[u.GetLong()] != "" {
+		// already exists
 		return shortenedurl.ShortenedURL{}, errors.New("Shortened URL already exists")
+	}
+
+	m[u.GetLong()] = u.GetShort()
+	if saveManifest(path, m) == false {
+		// unable to save
+		return shortenedurl.ShortenedURL{}, errors.New("Shortened URL could not be created")
 	}
 
 	return u, nil
 }
 
-// Retrieve an existing URL from file system
+// Retrieve an existing Shortened URL from file system
 func (f FileSystem) Retrieve(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedURL, error) {
-	// @TODO implement
-	return u, nil
+	m := loadManifest(getPathToDbFile(f))
+
+	// try to retrieve by URL's long address
+	if u.GetLong() != "" && m[u.GetLong()] != "" {
+		return shortenedurl.New(u.GetLong(), m[u.GetLong()]), nil
+	}
+
+	if u.GetShort() != "" {
+		// try to retrieve by URL's short address
+		for long, short := range m {
+			if u.GetShort() == short {
+				return shortenedurl.New(long, short), nil
+			}
+		}
+	}
+
+	// no matching manifest entries
+	return shortenedurl.ShortenedURL{}, errors.New("Shortened URL does not exist")
 }
 
 // Update an existing URL from file system
@@ -49,6 +78,37 @@ func (f FileSystem) Delete(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedU
 	return u, nil
 }
 
-func getPathToURLFile(f FileSystem, u shortenedurl.ShortenedURL) string {
-	return f.basePath + "/" + u.GetShort() + ".txt"
+func getPathToDbFile(f FileSystem) string {
+	return f.basePath + "/db.txt"
+}
+
+func loadManifest(path string) map[string]string {
+	fileContents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return map[string]string{}
+	}
+
+	m := map[string]string{}
+
+	err = json.Unmarshal(fileContents, &m)
+	if err != nil {
+		fmt.Println(err)
+		return map[string]string{}
+	}
+
+	return m
+}
+
+func saveManifest(path string, data map[string]string) bool {
+	fileContents, err := json.Marshal(data)
+	if err != nil {
+		return false
+	}
+
+	err = ioutil.WriteFile(path, fileContents, 0644)
+	if err != nil {
+		return false
+	}
+
+	return true
 }

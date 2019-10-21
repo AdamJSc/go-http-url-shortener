@@ -15,17 +15,40 @@ type responsePayload struct {
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		payload := responsePayload{
-			Status: "ok",
-			Data: map[string]string{
-				"hello": "world",
-			},
+		data := map[string]string{
+			"hello": "world",
 		}
 
-		writeResponse(w, payload, http.StatusOK)
+		writeOkResponse(w, data)
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// writeOk writes a standardised JSON response for a successful request
+func writeOkResponse(w http.ResponseWriter, data interface{}) {
+	payload := responsePayload{
+		Status: "ok",
+		Data:   data,
+	}
+
+	writeResponse(w, payload, http.StatusOK)
+}
+
+// writeErr writes a standardised JSON response for a failed request
+func writeErrResponse(w http.ResponseWriter, data interface{}, code ...int) {
+	payload := responsePayload{
+		Status: "err",
+		Data:   data,
+	}
+
+	// default to 500 unless an alternative code has been supplied
+	statusCode := http.StatusInternalServerError
+	if len(code) != 0 {
+		statusCode = code[0]
+	}
+
+	writeResponse(w, payload, statusCode)
 }
 
 func writeResponse(w http.ResponseWriter, p responsePayload, code int) {

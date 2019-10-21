@@ -18,7 +18,7 @@ func main() {
 			return
 		}
 
-		handlers.PostShorten(repository, w, r)
+		handlers.PostShorten(repository, w, r).Write(w)
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

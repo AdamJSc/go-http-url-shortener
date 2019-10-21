@@ -3,15 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"http-url-shortener/internal/services/responseservice"
 	"log"
 	"net/http"
 )
-
-// responsePayload represents a standardised JSON payload returned by API
-type responsePayload struct {
-	Status string      `json:"status"`
-	Data   interface{} `json:"data"`
-}
 
 func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -27,20 +22,14 @@ func main() {
 
 // writeOk writes a standardised JSON response for a successful request
 func writeOkResponse(w http.ResponseWriter, data interface{}) {
-	payload := responsePayload{
-		Status: "ok",
-		Data:   data,
-	}
+	payload := responseservice.NewPayload("ok", data)
 
 	writeResponse(w, payload, http.StatusOK)
 }
 
 // writeErr writes a standardised JSON response for a failed request
 func writeErrResponse(w http.ResponseWriter, data interface{}, code ...int) {
-	payload := responsePayload{
-		Status: "err",
-		Data:   data,
-	}
+	payload := responseservice.NewPayload("err", data)
 
 	// default to 500 unless an alternative code has been supplied
 	statusCode := http.StatusInternalServerError
@@ -51,7 +40,7 @@ func writeErrResponse(w http.ResponseWriter, data interface{}, code ...int) {
 	writeResponse(w, payload, statusCode)
 }
 
-func writeResponse(w http.ResponseWriter, p responsePayload, code int) {
+func writeResponse(w http.ResponseWriter, p responseservice.Payload, code int) {
 	// parse response payload
 	body, _ := json.Marshal(p)
 

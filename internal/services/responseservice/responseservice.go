@@ -54,11 +54,13 @@ func NewOkResponse(data interface{}) JSONResponse {
 }
 
 // NewErrResponse returns a new JSONResponse representing a request that generated an error
-func NewErrResponse(data interface{}, code ...int) JSONResponse {
+func NewErrResponse(message string, code ...int) JSONResponse {
 	r := JSONResponse{
 		payload: payload{
 			Status: "err",
-			Data:   data,
+			Data: map[string]string{
+				"message": message,
+			},
 		},
 	}
 

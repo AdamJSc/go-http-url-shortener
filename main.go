@@ -1,18 +1,24 @@
 package main
 
 import (
-	"http-url-shortener/internal/services/responseservice"
+	"http-url-shortener/internal/handlers"
+	"http-url-shortener/internal/repositories/shortenedurlfilesystemrepository"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data := map[string]string{
-			"hello": "world",
+	workdir, _ := os.Getwd()
+	repository := shortenedurlfilesystemrepository.New(workdir + "/data")
+
+	http.HandleFunc("/api/shorten", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
 		}
 
-		responseservice.NewOkResponse(data).Write(w)
+		handlers.PostShorten(repository, w, r)
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

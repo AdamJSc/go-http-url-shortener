@@ -66,18 +66,6 @@ func (f FileSystem) Retrieve(u shortenedurl.ShortenedURL) (shortenedurl.Shortene
 	return shortenedurl.ShortenedURL{}, errors.New("Shortened URL does not exist")
 }
 
-// Update an existing URL from file system
-func (f FileSystem) Update(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedURL, error) {
-	// @TODO implement
-	return u, nil
-}
-
-// Delete an existing URL from file system
-func (f FileSystem) Delete(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedURL, error) {
-	// @TODO implement
-	return u, nil
-}
-
 func getPathToDbFile(f FileSystem) string {
 	return f.basePath + "/db.txt"
 }

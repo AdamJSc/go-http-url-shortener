@@ -56,6 +56,16 @@ func PostShorten(
 	})
 }
 
+// GetShortURLRedirect handles request to redirect a short URL
+func GetShortURLRedirect(
+	fs shortenedurlfilesystemrepository.FileSystem,
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+	// default to 404
+	w.WriteHeader(http.StatusNotFound)
+}
+
 func getValueOfURLFromRequestBody(r *http.Request) (string, error) {
 	// read request body
 	requestBody, err := ioutil.ReadAll(r.Body)

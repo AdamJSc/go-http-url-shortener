@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // PostShorten handles request to shorten a URL
@@ -38,7 +39,7 @@ func PostShorten(
 	shortCode := shortcodeservice.Generate()
 
 	// loop until we have a unique short code...
-	for err != nil {
+	for err == nil {
 		shortCode = shortcodeservice.Generate()
 		_, err = fs.Retrieve(shortenedurl.New("", shortCode))
 	}
@@ -62,7 +63,23 @@ func GetShortURLRedirect(
 	w http.ResponseWriter,
 	r *http.Request,
 ) {
-	// default to 404
+	pathParts := strings.SplitN(r.URL.Path, "/", 2)
+	if len(pathParts) < 2 {
+		// root path "/" (no short code supplied)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	shortCode := pathParts[1]
+	shortenedURL, err := fs.Retrieve(shortenedurl.New("", shortCode))
+	if err == nil {
+		// set redirect header to short code's corresponding long URL
+		w.Header().Set("Location", shortenedURL.GetLong())
+		w.WriteHeader(http.StatusMovedPermanently)
+		return
+	}
+
+	// nothing found
 	w.WriteHeader(http.StatusNotFound)
 }
 

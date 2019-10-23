@@ -15,27 +15,37 @@ type payload struct {
 // JSONResponse represents status code and payload of a response
 type JSONResponse struct {
 	payload    payload
+	headers    map[string]string
 	statusCode int
 }
 
 func (r JSONResponse) Write(w http.ResponseWriter) JSONResponse {
-	payload := r.payload
-	statusCode := r.statusCode
+	p := r.payload
+	h := r.headers
+	s := r.statusCode
 
 	// set default http status
-	if statusCode == 0 {
-		statusCode = http.StatusInternalServerError
+	if s == 0 {
+		s = http.StatusInternalServerError
 	}
 
-	// parse response payload
-	body, _ := json.Marshal(payload)
-
-	// set headers
+	// set default content type header
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
 
-	// write body
-	fmt.Fprintf(w, string(body))
+	// set header overrides
+	for k, v := range h {
+		w.Header().Set(k, v)
+	}
+
+	// set status code
+	w.WriteHeader(s)
+
+	// if payload is not blank, then write as body
+	if p != (payload{}) {
+		// parse response payload
+		body, _ := json.Marshal(p)
+		fmt.Fprintf(w, string(body))
+	}
 
 	return r
 }

@@ -44,22 +44,28 @@ func (f FileSystem) Create(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedU
 	return u, nil
 }
 
-// Retrieve an existing Shortened URL from file system
-func (f FileSystem) Retrieve(u shortenedurl.ShortenedURL) (shortenedurl.ShortenedURL, error) {
+// RetrieveByShortCode retrieves a Shortened URL by its short code
+func (f FileSystem) RetrieveByShortCode(shortcode string) (shortenedurl.ShortenedURL, error) {
 	m := loadManifest(getPathToDbFile(f))
 
-	// try to retrieve by URL's long address
-	if u.GetLong() != "" && m[u.GetLong()] != "" {
-		return shortenedurl.New(u.GetLong(), m[u.GetLong()]), nil
+	// try to retrieve by URL's short code
+	for l, s := range m {
+		if s == shortcode {
+			return shortenedurl.New(l, s), nil
+		}
 	}
 
-	if u.GetShort() != "" {
-		// try to retrieve by URL's short address
-		for long, short := range m {
-			if u.GetShort() == short {
-				return shortenedurl.New(long, short), nil
-			}
-		}
+	// no matching manifest entries
+	return shortenedurl.ShortenedURL{}, errors.New("Shortened URL does not exist")
+}
+
+// RetrieveByLongURL retrieves a Shortened URL by its origin (long) URL
+func (f FileSystem) RetrieveByLongURL(longURL string) (shortenedurl.ShortenedURL, error) {
+	m := loadManifest(getPathToDbFile(f))
+
+	// try to retrieve by origin (long) URL
+	if m[longURL] != "" {
+		return shortenedurl.New(longURL, m[longURL]), nil
 	}
 
 	// no matching manifest entries

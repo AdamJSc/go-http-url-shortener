@@ -26,7 +26,7 @@ func PostShorten(
 	}
 
 	// check if we've already shortened it
-	existingURL, err := fs.Retrieve(shortenedurl.New(urlValue, ""))
+	existingURL, err := fs.RetrieveByLongURL(urlValue)
 	if err == nil {
 		// return our existing record
 		return responseservice.NewOkResponse(map[string]string{
@@ -41,7 +41,7 @@ func PostShorten(
 	// loop until we have a unique short code...
 	for err == nil {
 		shortCode = shortcodeservice.Generate()
-		_, err = fs.Retrieve(shortenedurl.New("", shortCode))
+		_, err = fs.RetrieveByShortCode(shortCode)
 	}
 
 	// save our shortened URL
@@ -71,7 +71,7 @@ func GetShortURLRedirect(
 	}
 
 	shortCode := pathParts[1]
-	shortenedURL, err := fs.Retrieve(shortenedurl.New("", shortCode))
+	shortenedURL, err := fs.RetrieveByShortCode(shortCode)
 	if err == nil {
 		// set redirect header to short code's corresponding long URL
 		w.Header().Set("Location", shortenedURL.GetLong())

@@ -31,7 +31,6 @@ func main() {
 		}
 
 		handlers.GetShortURLRedirect(repository, w, r)
-		return
 	})
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

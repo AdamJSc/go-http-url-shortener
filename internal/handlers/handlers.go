@@ -26,12 +26,11 @@ func PostShorten(
 	}
 
 	// check if we've already shortened it
-	existingURL, err := fs.RetrieveByLongURL(urlValue)
+	existing, err := fs.RetrieveByLongURL(urlValue)
 	if err == nil {
 		// return our existing record
 		return responseservice.NewOkResponse(map[string]string{
-			"long":  existingURL.GetLong(),
-			"short": existingURL.GetShort(),
+			"shortURL": "http://" + r.Host + "/" + existing.GetShort(),
 		})
 	}
 
@@ -45,15 +44,14 @@ func PostShorten(
 	}
 
 	// save our shortened URL
-	shortenedURL, err := fs.Create(shortenedurl.New(urlValue, shortCode))
+	shortened, err := fs.Create(shortenedurl.New(urlValue, shortCode))
 	if err != nil {
 		return responseservice.NewErrResponse(err.Error())
 	}
 
 	// return our new record
 	return responseservice.NewOkResponse(map[string]string{
-		"long":  shortenedURL.GetLong(),
-		"short": shortenedURL.GetShort(),
+		"shortURL": "http://" + r.Host + "/" + shortened.GetShort(),
 	})
 }
 

@@ -16,43 +16,7 @@ type apiResponse struct {
 	Data   map[string]string `json:"data"`
 }
 
-func TestItReceivesANotFoundStatusWhenRootIsRequested(t *testing.T) {
-	r := httptest.NewRequest("GET", "http://localhost:8080/", nil)
-	w := httptest.NewRecorder()
-
-	apiHandler(w, r)
-	resp := w.Result()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusNotFound, resp.StatusCode))
-	}
-}
-
-func TestItReceivesANotFoundStatusWhenNonExistentShortCodeIsRequested(t *testing.T) {
-	r := httptest.NewRequest("GET", "http://localhost:8080/ABCD", nil)
-	w := httptest.NewRecorder()
-
-	apiHandler(w, r)
-	resp := w.Result()
-
-	if resp.StatusCode != http.StatusNotFound {
-		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusNotFound, resp.StatusCode))
-	}
-}
-
-func TestItReceivesAMethodNotAllowedStatusWhenInvalidMethodIsUsed(t *testing.T) {
-	r := httptest.NewRequest("POST", "http://localhost:8080/", nil)
-	w := httptest.NewRecorder()
-
-	apiHandler(w, r)
-	resp := w.Result()
-
-	if resp.StatusCode != http.StatusMethodNotAllowed {
-		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusMethodNotAllowed, resp.StatusCode))
-	}
-}
-
-func TestItFailsToShortenAURLWhenPayloadIsMissing(t *testing.T) {
+func TestItFailsToShortenAURLWhenPayloadIsEmpty(t *testing.T) {
 	r := httptest.NewRequest("POST", "http://localhost:8080/api/shorten", nil)
 	w := httptest.NewRecorder()
 
@@ -74,7 +38,7 @@ func TestItFailsToShortenAURLWhenPayloadIsMissing(t *testing.T) {
 	}
 }
 
-func TestItFailsToShortenAURLWhenURLIsMissingFromPayload(t *testing.T) {
+func TestItFailsToShortenAURLWhenLongURLIsMissingFromPayload(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(
@@ -104,7 +68,7 @@ func TestItFailsToShortenAURLWhenURLIsMissingFromPayload(t *testing.T) {
 	}
 }
 
-func TestItFailsToShortenAURLWhenURLIsNotAValidType(t *testing.T) {
+func TestItFailsToShortenAURLWhenLongURLIsNotAValidType(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(
@@ -134,7 +98,7 @@ func TestItFailsToShortenAURLWhenURLIsNotAValidType(t *testing.T) {
 	}
 }
 
-func TestItFailsToShortenAURLWhenURLIsNotAValidFormat(t *testing.T) {
+func TestItFailsToShortenAURLWhenLongURLIsNotAValidFormat(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	r := httptest.NewRequest(

@@ -50,6 +50,34 @@ func (r JSONResponse) Write(w http.ResponseWriter) JSONResponse {
 	return r
 }
 
+// NewEmptyResponse returns a new JSONResponse without a payload
+func NewEmptyResponse(code int, headers ...string) JSONResponse {
+	headersMap := map[string]string{}
+
+	var k, v string
+	i := 0
+
+	// map our array of header strings in exact pairs
+	// e.g. "Content-Type", "application/json", "Location", "http://bbc.co.uk"
+	for (i + 1) < len(headers) {
+		k = headers[i]
+		v = headers[i+1]
+
+		if k != "" && v != "" {
+			headersMap[k] = v
+		}
+
+		i = i + 2
+	}
+
+	r := JSONResponse{
+		statusCode: code,
+		headers:    headersMap,
+	}
+
+	return r
+}
+
 // NewOkResponse returns a new JSONResponse representing a successful request
 func NewOkResponse(data interface{}) JSONResponse {
 	r := JSONResponse{

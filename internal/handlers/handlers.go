@@ -62,25 +62,26 @@ func GetShortURLRedirect(
 	fs shortenedurlfilesystemrepository.FileSystem,
 	w http.ResponseWriter,
 	r *http.Request,
-) {
+) responseservice.JSONResponse {
 	pathParts := strings.SplitN(r.URL.Path, "/", 2)
 	if len(pathParts) < 2 {
 		// root path "/" (no short code supplied)
-		w.WriteHeader(http.StatusNotFound)
-		return
+		return responseservice.NewEmptyResponse(http.StatusNotFound)
 	}
 
 	shortCode := pathParts[1]
 	shortenedURL, err := fs.RetrieveByShortCode(shortCode)
 	if err == nil {
 		// set redirect header to short code's corresponding long URL
-		w.Header().Set("Location", shortenedURL.GetLong())
-		w.WriteHeader(http.StatusMovedPermanently)
-		return
+		return responseservice.NewEmptyResponse(
+			http.StatusMovedPermanently,
+			"Location",
+			shortenedURL.GetLong(),
+		)
 	}
 
 	// nothing found
-	w.WriteHeader(http.StatusNotFound)
+	return responseservice.NewEmptyResponse(http.StatusNotFound)
 }
 
 func getValueOfURLFromRequestBody(r *http.Request) (string, error) {

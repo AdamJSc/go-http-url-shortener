@@ -1,8 +1,8 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"http-url-shortener/internal/services/responseservice"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,11 +10,6 @@ import (
 	"strings"
 	"testing"
 )
-
-type apiResponse struct {
-	Status string            `json:"status"`
-	Data   map[string]string `json:"data"`
-}
 
 func TestItFailsToShortenAURLWhenPayloadIsEmpty(t *testing.T) {
 	r := httptest.NewRequest("POST", "http://localhost:8080/api/shorten", nil)
@@ -27,14 +22,15 @@ func TestItFailsToShortenAURLWhenPayloadIsEmpty(t *testing.T) {
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusBadRequest, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "err" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json.Status))
+	if json["status"] != "err" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json["status"]))
 	}
 
-	if json.Data["message"] != "unexpected end of JSON input" {
-		t.Error(fmt.Sprintf("Expected message of 'unexpected end of JSON input', instead received '%s'", json.Data["message"]))
+	jsonData := json["data"].(map[string]interface{})
+	if jsonData["message"] != "unexpected end of JSON input" {
+		t.Error(fmt.Sprintf("Expected message of 'unexpected end of JSON input', instead received '%s'", jsonData["message"]))
 	}
 }
 
@@ -57,14 +53,15 @@ func TestItFailsToShortenAURLWhenLongURLIsMissingFromPayload(t *testing.T) {
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusBadRequest, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "err" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json.Status))
+	if json["status"] != "err" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json["status"]))
 	}
 
-	if json.Data["message"] != "`url` is a non-string or missing" {
-		t.Error(fmt.Sprintf("Expected message of '`url` is a non-string or missing', instead received '%s'", json.Data["message"]))
+	jsonData := json["data"].(map[string]interface{})
+	if jsonData["message"] != "`url` is a non-string or missing" {
+		t.Error(fmt.Sprintf("Expected message of '`url` is a non-string or missing', instead received '%s'", jsonData["message"]))
 	}
 }
 
@@ -87,14 +84,15 @@ func TestItFailsToShortenAURLWhenLongURLIsNotAValidType(t *testing.T) {
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusBadRequest, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "err" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json.Status))
+	if json["status"] != "err" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json["status"]))
 	}
 
-	if json.Data["message"] != "`url` is a non-string or missing" {
-		t.Error(fmt.Sprintf("Expected message of '`url` is a non-string or missing', instead received '%s'", json.Data["message"]))
+	jsonData := json["data"].(map[string]interface{})
+	if jsonData["message"] != "`url` is a non-string or missing" {
+		t.Error(fmt.Sprintf("Expected message of '`url` is a non-string or missing', instead received '%s'", jsonData["message"]))
 	}
 }
 
@@ -117,14 +115,15 @@ func TestItFailsToShortenAURLWhenLongURLIsNotAValidFormat(t *testing.T) {
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusBadRequest, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "err" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json.Status))
+	if json["status"] != "err" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'err', instead received '%s'", json["status"]))
 	}
 
-	if json.Data["message"] != "`url` is not a valid URL" {
-		t.Error(fmt.Sprintf("Expected message of '`url` is not a valid URL', instead received '%s'", json.Data["message"]))
+	jsonData := json["data"].(map[string]interface{})
+	if jsonData["message"] != "`url` is not a valid URL" {
+		t.Error(fmt.Sprintf("Expected message of '`url` is not a valid URL', instead received '%s'", jsonData["message"]))
 	}
 }
 
@@ -147,27 +146,28 @@ func TestItSuccessfullyReturnsANewShortURLWhenLongURLHasNotAlreadyBeenShortened(
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusOK, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "ok" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'ok', instead received '%s'", json.Status))
+	if json["status"] != "ok" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'ok', instead received '%s'", json["status"]))
 	}
 
+	jsonData := json["data"].(map[string]interface{})
 	expectedShortURLPrefix := "http://localhost:8080/"
-	if strings.HasPrefix(json.Data["shortURL"], expectedShortURLPrefix) != true {
+	if strings.HasPrefix(jsonData["shortURL"].(string), expectedShortURLPrefix) != true {
 		t.Error(fmt.Sprintf(
 			"Expected shortURL to begin with of '%s', instead shortURL is '%s'",
 			expectedShortURLPrefix,
-			json.Data["shortURL"],
+			jsonData["shortURL"],
 		))
 	}
 
-	shortCode := strings.TrimPrefix(json.Data["shortURL"], expectedShortURLPrefix)
+	shortCode := strings.TrimPrefix(jsonData["shortURL"].(string), expectedShortURLPrefix)
 	if len(shortCode) != 4 {
 		t.Error(fmt.Sprintf(
 			"Expected shortURL code to be 4 characters long, instead code length is %d ('%s')",
 			len(shortCode),
-			json.Data["shortURL"],
+			jsonData["shortURL"],
 		))
 	}
 
@@ -197,28 +197,20 @@ func TestItReturnsAKnownShortURLWhenLongURLHasAlreadyBeenShortened(t *testing.T)
 		t.Error(fmt.Sprintf("Expected status code %d, instead received %d", http.StatusOK, resp.StatusCode))
 	}
 
-	json := parseJSON(resp)
+	json := responseservice.ParseJSON(resp)
 
-	if json.Status != "ok" {
-		t.Error(fmt.Sprintf("Expected JSON status of 'ok', instead received '%s'", json.Status))
+	if json["status"] != "ok" {
+		t.Error(fmt.Sprintf("Expected JSON status of 'ok', instead received '%s'", json["status"]))
 	}
 
+	jsonData := json["data"].(map[string]interface{})
 	expectedShortURL := "http://localhost:8080/ABC1"
-	if json.Data["shortURL"] != expectedShortURL {
-		t.Error(fmt.Sprintf("Expected shortURL of '%s', instead received '%s'", expectedShortURL, json.Data["shortURL"]))
+	if jsonData["shortURL"] != expectedShortURL {
+		t.Error(fmt.Sprintf("Expected shortURL of '%s', instead received '%s'", expectedShortURL, jsonData["shortURL"]))
 	}
 
 	// clean up
 	clearTestData()
-}
-
-func parseJSON(resp *http.Response) apiResponse {
-	bytes, _ := ioutil.ReadAll(resp.Body)
-
-	jsonMap := apiResponse{}
-	json.Unmarshal(bytes, &jsonMap)
-
-	return jsonMap
 }
 
 func setTestData(data string) {

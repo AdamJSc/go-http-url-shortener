@@ -3,6 +3,7 @@ package responseservice
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -108,4 +109,14 @@ func NewErrResponse(message string, code ...int) JSONResponse {
 	}
 
 	return r
+}
+
+// ParseJSON marshals a JSON payload into a map
+func ParseJSON(resp *http.Response) map[string]interface{} {
+	bytes, _ := ioutil.ReadAll(resp.Body)
+
+	jsonMap := map[string]interface{}{}
+	json.Unmarshal(bytes, &jsonMap)
+
+	return jsonMap
 }

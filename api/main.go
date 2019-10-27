@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"http-url-shortener/internal/handlers"
 	"http-url-shortener/internal/repositories/shortenedurlfilesystemrepository"
 	"log"
@@ -11,6 +12,7 @@ import (
 func main() {
 	http.HandleFunc("/", apiHandler)
 
+	fmt.Println("Listening on port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 

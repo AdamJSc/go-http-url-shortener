@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/pkg/browser"
 )
 
 type handler struct {
@@ -104,6 +106,46 @@ func commandShorten(param string) error {
 }
 
 func commandRedirect(param string) error {
-	// @TODO Implement
+	if param == "" {
+		return errors.New("Please supply a short code to redirect to")
+	}
+
+	// prevent requests from following Location header redirects,
+	// we need to inspect this header later on
+	httpClient := http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	// make request
+	resp, err := httpClient.Get(fmt.Sprintf("%s/%s", apiBaseURL, param))
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	// check if shortcode exists
+	if resp.StatusCode == http.StatusNotFound {
+		return fmt.Errorf("Shortcode %s does not refer to a short URL", param)
+	}
+
+	// check if status code is expected
+	if resp.StatusCode != http.StatusMovedPermanently {
+		return fmt.Errorf("Unexpected status %d", resp.StatusCode)
+	}
+
+	// try to retrieve redirect location
+	location := resp.Header["Location"]
+	if len(location) == 0 {
+		return fmt.Errorf("Unknown redirect location")
+	}
+
+	// try to launch URL in new browser window
+	url := location[0]
+	fmt.Printf("Launching %s...\n", url)
+	if browser.OpenURL(url) != nil {
+		return fmt.Errorf("Failed to launch %s :(", url)
+	}
+
 	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"http-url-shortener/internal/entities/shortenedurl"
-	"http-url-shortener/internal/repositories/shortenedurlfilesystemrepository"
+	"http-url-shortener/internal/repositories/repositoryinterface"
 	"http-url-shortener/internal/services/responseservice"
 	"http-url-shortener/internal/services/shortcodeservice"
 	"io/ioutil"
@@ -15,7 +15,7 @@ import (
 
 // PostShorten handles request to shorten a URL
 func PostShorten(
-	fs shortenedurlfilesystemrepository.FileSystem,
+	repo repositoryinterface.RepositoryInterface,
 	w http.ResponseWriter,
 	r *http.Request,
 ) responseservice.JSONResponse {
@@ -26,7 +26,7 @@ func PostShorten(
 	}
 
 	// check if we've already shortened it
-	existing, err := fs.RetrieveByLongURL(urlValue)
+	existing, err := repo.RetrieveByLongURL(urlValue)
 	if err == nil {
 		// return our existing record
 		return responseservice.NewOkResponse(map[string]string{
@@ -40,11 +40,11 @@ func PostShorten(
 	// loop until we have a unique short code...
 	for err == nil {
 		shortCode = shortcodeservice.Generate()
-		_, err = fs.RetrieveByShortCode(shortCode)
+		_, err = repo.RetrieveByShortCode(shortCode)
 	}
 
 	// save our shortened URL
-	shortened, err := fs.Create(shortenedurl.New(urlValue, shortCode))
+	shortened, err := repo.Create(shortenedurl.New(urlValue, shortCode))
 	if err != nil {
 		return responseservice.NewErrResponse(err.Error())
 	}
@@ -57,7 +57,7 @@ func PostShorten(
 
 // GetShortURLRedirect handles request to redirect a short URL
 func GetShortURLRedirect(
-	fs shortenedurlfilesystemrepository.FileSystem,
+	repo repositoryinterface.RepositoryInterface,
 	w http.ResponseWriter,
 	r *http.Request,
 ) responseservice.JSONResponse {
@@ -68,7 +68,7 @@ func GetShortURLRedirect(
 	}
 
 	shortCode := pathParts[1]
-	shortenedURL, err := fs.RetrieveByShortCode(shortCode)
+	shortenedURL, err := repo.RetrieveByShortCode(shortCode)
 	if err == nil {
 		// set redirect header to short code's corresponding long URL
 		return responseservice.NewEmptyResponse(

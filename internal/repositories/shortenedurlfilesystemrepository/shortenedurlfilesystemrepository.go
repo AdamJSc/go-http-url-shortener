@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"http-url-shortener/internal/entities/shortenedurl"
 	"io/ioutil"
+	"os"
+	"path"
 )
 
 // FileSystem represents a file system to perform operations on
@@ -93,13 +95,16 @@ func loadManifest(path string) map[string]string {
 	return m
 }
 
-func saveManifest(path string, data map[string]string) bool {
+func saveManifest(filePath string, data map[string]string) bool {
 	fileContents, err := json.Marshal(data)
 	if err != nil {
 		return false
 	}
 
-	err = ioutil.WriteFile(path, fileContents, 0644)
+	// create file's parent directory if it doesn't exist
+	os.MkdirAll(path.Dir(filePath), 0755)
+
+	err = ioutil.WriteFile(filePath, fileContents, 0644)
 	if err != nil {
 		return false
 	}

@@ -1,5 +1,7 @@
 # HTTP URL Shortener 🔗
 
+**v1.0.0**
+
 Small HTTP service that accepts a long URL to be shortened, and generates a shortcode that redirects to its origin.
 
 ## Requirements

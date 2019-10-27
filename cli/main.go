@@ -1,8 +1,13 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 )
 
 type handler struct {
@@ -56,7 +61,45 @@ func newHandler(args []string) handler {
 }
 
 func commandShorten(param string) error {
-	// @TODO Implement
+	if param == "" {
+		return errors.New("Please supply a URL to shorten")
+	}
+
+	// build request payload and make request
+	requestPayload := fmt.Sprintf("{\"url\": \"%s\"}", param)
+	resp, err := http.Post(
+		fmt.Sprintf("%s/api/shorten", apiBaseURL),
+		"application/json",
+		strings.NewReader(requestPayload),
+	)
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	// read response body
+	body := []byte{}
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errors.New(err.Error())
+	}
+
+	// parse body as json
+	parsed := map[string]interface{}{}
+	err = json.Unmarshal(body, &parsed)
+	if err != nil {
+		return fmt.Errorf("Status %d, %s", resp.StatusCode, err.Error())
+	}
+
+	// check if response body indicates a success
+	if parsed["status"].(string) != "ok" {
+		message := parsed["data"].(map[string]interface{})["message"]
+		return errors.New(message.(string))
+	}
+
+	// print short URL
+	shortURL := parsed["data"].(map[string]interface{})["shortURL"]
+	fmt.Println(shortURL.(string))
+
 	return nil
 }
 
